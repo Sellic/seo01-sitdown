@@ -1,4 +1,12 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {};
+// next.config.mjs
 
-export default nextConfig;
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    outputFileTracingIncludes: {
+      '.': ['./prisma/dev.db'],
+    },
+  },
+}
+
+export default nextConfig
