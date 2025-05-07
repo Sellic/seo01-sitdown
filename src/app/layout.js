@@ -1,6 +1,7 @@
 import "./globals.css";
 import Link from 'next/link';
 import ClientHeader from '@/components/ClientHeader';
+import { GoogleAnalytics } from '@next/third-parties/google'
 
 export const metadata = {
   title: "SIT DOWN - 서울 산업 트렌드 뉴스",
@@ -29,6 +30,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="ko">
       <body className="flex flex-col min-h-screen">
+        <GoogleAnalytics gaId="G-3EGLQXQ4MP" />
         <header className="flex justify-between p-4 bg-gray-100">
           <Link href="/">
             <h1 className="font-bold">📰 Seoul Industry Trend Up & Down</h1>
