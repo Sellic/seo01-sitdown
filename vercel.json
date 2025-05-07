@@ -3,10 +3,5 @@
     "env": {
       "DATABASE_URL": "file:./prisma/dev.db"
     }
-  },
-  "functions": {
-    "api/**/*.js": {
-      "includeFiles": "prisma/dev.db"
-    }
   }
 }
