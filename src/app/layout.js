@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
         <GoogleAnalytics gaId="G-3EGLQXQ4MP" />
         <header className="flex justify-between p-4 bg-gray-100">
           <Link href="/">
-            <h1 className="font-bold">📰 Seoul Industry Trend Up & Down</h1>
+            <h1 className="font-bold">📰 Sellic Industry Trend Up & Down</h1>
           </Link>
           <ClientHeader />
         </header>
