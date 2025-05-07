@@ -8,6 +8,5 @@
     "api/**/*.js": {
       "includeFiles": "prisma/dev.db"
     }
-  },
-  "ignoreCommand": "echo ''"
+  }
 }
