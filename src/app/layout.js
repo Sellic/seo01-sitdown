@@ -31,7 +31,7 @@ export default function RootLayout({ children }) {
       <body className="flex flex-col min-h-screen">
         <header className="flex justify-between p-4 bg-gray-100">
           <Link href="/">
-            <h1 className="font-bold">📰 SIT DOWN</h1>
+            <h1 className="font-bold">📰 Seoul Industry Trend Up & Down</h1>
           </Link>
           <ClientHeader />
         </header>
