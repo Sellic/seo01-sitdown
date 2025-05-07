@@ -6,9 +6,9 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  // schema.prisma 수정
-  url = "file:./dev.db"
+  url      = "file:./prisma/dev.db"
 }
+
 
 model News {
   id        Int      @id @default(autoincrement())
