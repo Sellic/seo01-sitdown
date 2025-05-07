@@ -6,7 +6,8 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  // schema.prisma 수정
+  url = "file:./dev.db"
 }
 
 model News {
