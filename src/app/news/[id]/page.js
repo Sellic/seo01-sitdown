@@ -1,14 +1,12 @@
+// app/news/[id]/page.js
+
+// generateStaticParams 제거
+// export async function generateStaticParams() { ... }
+
+
 import { PrismaClient } from "@prisma/client";
 import DeleteEditButtons from "./_components/DeleteEditButtons";
-
 const prisma = new PrismaClient();
-
-export async function generateStaticParams() {
-  const newsList = await prisma.news.findMany();
-  return newsList.map((news) => ({
-    id: news.id.toString(),
-  }));
-}
 
 export default async function NewsDetailPage({ params }) {
   const newsId = Number(params.id);
@@ -43,9 +41,6 @@ export default async function NewsDetailPage({ params }) {
         className="text-lg leading-7 whitespace-pre-line"
         dangerouslySetInnerHTML={{ __html: news.content }}
       />
-
-
-      {/* 클라이언트 컴포넌트에서 삭제/수정 처리 */}
       <DeleteEditButtons newsId={news.id} />
     </div>
   );
