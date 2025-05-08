@@ -36,6 +36,12 @@ export default function NewsEditPage({ params }) {
     });
 
     if (res.ok) {
+      await fetch('/api/revalidate?path=/', {
+        method: 'POST',
+        headers: {
+          'x-revalidate-token': process.env.NEXT_PUBLIC_REVALIDATE_TOKEN
+        }
+      });
       alert('수정 완료!');
       router.push(`/news/${newsId}`);
     } else {

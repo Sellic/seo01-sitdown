@@ -23,6 +23,12 @@ export default function DeleteEditButtons({ newsId }) {
     });
 
     if (res.ok) {
+      await fetch('/api/revalidate?path=/', {
+        method: 'POST',
+        headers: {
+          'x-revalidate-token': process.env.NEXT_PUBLIC_REVALIDATE_TOKEN
+        }
+      });
       alert("삭제되었습니다.");
       router.push("/");
     } else {
