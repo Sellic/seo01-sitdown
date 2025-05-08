@@ -62,11 +62,15 @@ export default function NewsWritePage() {
     });
 
     if (res.ok) {
-      await fetch('/api/revalidate?path=/', {
+      await fetch('/api/revalidate', {
         method: 'POST',
         headers: {
-          'x-revalidate-token': process.env.NEXT_PUBLIC_REVALIDATE_TOKEN
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/',
+          secret: process.env.NEXT_PUBLIC_REVALIDATE_TOKEN,
+        }),
       });
       alert('작성 완료!');
       router.push('/');

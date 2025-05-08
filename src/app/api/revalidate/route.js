@@ -1,20 +1,18 @@
+// /app/api/revalidate/route.js
 import { revalidatePath } from 'next/cache';
 
 export async function POST(request) {
-  try {
-    // 비밀키 검증
-    const secret = request.headers.get('x-revalidate-token');
-    if (secret !== process.env.REVALIDATE_SECRET) {
-      return Response.json(
-        { message: 'Invalid revalidation token' },
-        { status: 401 }
-      );
-    }
+  const { path, secret } = await request.json();
 
-    const path = request.nextUrl.searchParams.get('path') || '/';
-    revalidatePath(path);
-    return Response.json({ revalidated: true, now: Date.now() });
+  if (secret !== process.env.NEXT_PUBLIC_REVALIDATE_TOKEN) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  try {
+    revalidatePath(path); // 👈 이게 핵심!
+    return new Response(JSON.stringify({ revalidated: true }), { status: 200 });
   } catch (err) {
-    return Response.json({ message: 'Error revalidating' }, { status: 500 });
+    console.error('Revalidate Error:', err);
+    return new Response(JSON.stringify({ error: 'Revalidation failed' }), { status: 500 });
   }
 }
