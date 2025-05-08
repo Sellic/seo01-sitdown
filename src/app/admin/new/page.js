@@ -9,6 +9,8 @@ export default function NewsWritePage() {
   const [content, setContent] = useState('');
   const [keywords, setKeywords] = useState('');
   const [link, setLink] = useState('');
+  const [keywordRelation, setKeywordRelation] = useState('');
+  const [isGenerated, setIsGenerated] = useState(false);
   const router = useRouter();
 
   const handleAIGenerate = async () => {
@@ -20,7 +22,11 @@ export default function NewsWritePage() {
     const res = await fetch('/api/generate-article', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keywords, link }),
+      body: JSON.stringify({ 
+        keywords, 
+        link,
+        keywordRelation 
+      }),
     });
 
     const data = await res.json();
@@ -29,6 +35,7 @@ export default function NewsWritePage() {
       setTitle(data.title);
       setPreview(data.preview);
       setContent(data.content);
+      setIsGenerated(true);
     } else {
       alert('AI 기사 생성 실패: ' + data.error);
     }
@@ -59,22 +66,25 @@ export default function NewsWritePage() {
       <h2 className="text-2xl font-bold mb-6">뉴스 작성</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
-          className="border p-2 rounded"
+          className="border p-2 rounded disabled:bg-gray-100 disabled:cursor-not-allowed"
           placeholder="제목"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          disabled={!isGenerated}
         />
         <input
-          className="border p-2 rounded"
+          className="border p-2 rounded disabled:bg-gray-100 disabled:cursor-not-allowed"
           placeholder="미리보기 문구"
           value={preview}
           onChange={(e) => setPreview(e.target.value)}
+          disabled={!isGenerated}
         />
         <textarea
-          className="border p-2 rounded min-h-[200px]"
+          className="border p-2 rounded min-h-[200px] disabled:bg-gray-100 disabled:cursor-not-allowed"
           placeholder="본문 내용"
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          disabled={!isGenerated}
         />
         <input
           className="border p-2 rounded"
@@ -87,6 +97,12 @@ export default function NewsWritePage() {
           placeholder="링크 (모든 키워드에 동일하게 적용)"
           value={link}
           onChange={(e) => setLink(e.target.value)}
+        />
+        <textarea
+          className="border p-2 rounded min-h-[100px]"
+          placeholder="키워드 간의 관계나 맥락을 설명해주세요 (선택사항)"
+          value={keywordRelation}
+          onChange={(e) => setKeywordRelation(e.target.value)}
         />
         <button
           type="button"

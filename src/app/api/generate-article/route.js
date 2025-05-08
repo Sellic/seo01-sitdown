@@ -6,7 +6,7 @@ const openai = new OpenAI({
 
 export async function POST(req) {
   try {
-    const { keywords, link } = await req.json();
+    const { keywords, link, keywordRelation } = await req.json();
 
     if (!keywords || !link) {
       return Response.json(
@@ -18,9 +18,12 @@ export async function POST(req) {
     const keywordList = keywords.split(',').map(k => k.trim());
 
     const prompt = `
-당신은 뉴스 기사 작성자입니다. 아래 키워드를 사용해 다음 형식에 맞는 기사 1건을 작성해 주세요 본문은 2000자 내외로 최대한 길게 작성해주세요. 
+당신은 뉴스 기사 작성자입니다. 아래 키워드와 관계 설명을 참고하여 다음 형식에 맞는 기사 1건을 작성해 주세요. 본문은 2000자 내외로 최대한 길게 작성해주세요.  
+키워드를 반드시 다 사용할 필요는 없음. 적절하게 사용하면 됩니다.
+키워드 간의 관계에 더 집중해서 기사를 작성 해 주세요. 
 
 키워드: ${keywords}
+${keywordRelation ? `키워드 간의 관계 설명: ${keywordRelation}` : ''}
 
 응답 형식:
 ---
@@ -32,7 +35,10 @@ export async function POST(req) {
     const chatRes = await openai.chat.completions.create({
       model: 'gpt-4.1-nano',
       messages: [
-        { role: 'system', content: '당신은 뉴스 기사 작성 AI입니다.' },
+        { 
+          role: 'system', 
+          content: '당신은 뉴스 기사 작성 AI입니다. 키워드 간의 관계를 고려하여 논리적이고 일관된 기사를 작성해주세요. ' 
+        },
         { role: 'user', content: prompt },
       ],
       temperature: 0.8,
