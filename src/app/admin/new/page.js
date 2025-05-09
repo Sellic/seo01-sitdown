@@ -4,24 +4,80 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function NewsWritePage() {
+  const [step, setStep] = useState(1); // 1: URL 입력, 2: 키워드 수정, 3: 기사 생성, 4: 최종 확인
   const [title, setTitle] = useState('');
   const [preview, setPreview] = useState('');
   const [content, setContent] = useState('');
   const [keywords, setKeywords] = useState('');
   const [link, setLink] = useState('');
-  const [keywordRelation, setKeywordRelation] = useState('');
-  const [isGenerated, setIsGenerated] = useState(false);
+  const [siteAnalysis, setSiteAnalysis] = useState(null);
+  const [additionalInfo, setAdditionalInfo] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasBacklinks, setHasBacklinks] = useState(false);
   const router = useRouter();
 
-  const handleInsertBacklinks = () => {
+  const handleAnalyzeSite = async (additionalInfo = '') => {
     if (!link.trim()) {
       alert('웹사이트 주소는 필수값 입니다!');
       return;
     }
 
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/analyze-site', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ link, additionalInfo }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setKeywords(data.keywords);
+        setSiteAnalysis(data.analysis);
+        setStep(2);
+      } else {
+        alert('사이트 분석 실패: ' + data.error);
+      }
+    } catch (error) {
+      alert('사이트 분석 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleReanalyze = async () => {
+    await handleAnalyzeSite(additionalInfo);
+  };
+
+  const handleGenerateArticle = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/generate-article', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keywords, link }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setTitle(data.title);
+        setPreview(data.preview);
+        setContent(data.content);
+        setStep(3);
+      } else {
+        alert('AI 기사 생성 실패: ' + data.error);
+      }
+    } catch (error) {
+      alert('AI 기사 생성 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInsertBacklinks = () => {
     const keywordList = keywords.split(',').map(k => k.trim());
     let newContent = content;
 
@@ -37,47 +93,7 @@ export default function NewsWritePage() {
 
     setContent(newContent);
     setHasBacklinks(true);
-  };
-
-  const handleAIGenerate = async () => {
-    if (!link.trim()) {
-      alert('웹사이트 주소는 필수값 입니다!');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/generate-article', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          keywords, 
-          link,
-          keywordRelation 
-        }),
-      });
-
-      const data = await res.json();
-      console.log('API Response:', data);
-
-      if (res.ok) {
-        setTitle(data.title);
-        setPreview(data.preview);
-        setContent(data.content);
-        if (data.keywords) {
-          console.log('Setting keywords:', data.keywords);
-          setKeywords(data.keywords);
-        }
-        setIsGenerated(true);
-        setHasBacklinks(false);
-      } else {
-        alert('AI 기사 생성 실패: ' + data.error);
-      }
-    } catch (error) {
-      alert('AI 기사 생성 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
+    setStep(4);
   };
 
   const handleSubmit = async (e) => {
@@ -120,89 +136,236 @@ export default function NewsWritePage() {
   return (
     <div className="max-w-2xl mx-auto py-8">
       <h2 className="text-2xl font-bold mb-6">뉴스 작성</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <input
-          className="border p-2 rounded"
-          placeholder="타겟 사이트 (모든 키워드에 동일하게 적용)"
-          value={link}
-          onChange={(e) => setLink(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              handleAIGenerate();
-            }
-          }}
-        />
-        <input
-          className="border p-2 rounded disabled:bg-gray-100 disabled:cursor-not-allowed"
-          placeholder="제목"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          disabled={!isGenerated}
-        />
-        <input
-          className="border p-2 rounded disabled:bg-gray-100 disabled:cursor-not-allowed"
-          placeholder="미리보기 문구"
-          value={preview}
-          onChange={(e) => setPreview(e.target.value)}
-          disabled={!isGenerated}
-        />
-        <textarea
-          className="border p-2 rounded min-h-[200px] disabled:bg-gray-100 disabled:cursor-not-allowed"
-          placeholder="본문 내용"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          disabled={!isGenerated}
-        />
-        <input
-          className="border p-2 rounded"
-          placeholder="키워드 (콤마로 구분) (선택사항)"
-          value={keywords}
-          onChange={(e) => setKeywords(e.target.value)}
-        />
-        <textarea
-          className="border p-2 rounded min-h-[100px]"
-          placeholder="키워드 간의 관계나 기사의 맥락을 설명하면 더 나은 기사가 생성됨. 작성된 기사가 이상하면, 여기에 설명을 추가하세요.(선택사항)"
-          value={keywordRelation}
-          onChange={(e) => setKeywordRelation(e.target.value)}
-        />
-        
-        <button
-          type="button"
-          onClick={handleAIGenerate}
-          disabled={isLoading}
-          className={`relative flex items-center justify-center bg-green-500 text-white py-2 rounded hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed min-h-[40px]`}
-        >
-          {isLoading ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              기사 생성 중...
-            </>
-          ) : isGenerated ? (
-            '기사 다시 생성하기'
-          ) : (
-            'AI로 기사 생성하기'
-          )}
-        </button>
+      
+      {/* 진행 단계 표시 */}
+      <div className="flex justify-between mb-8">
+        {[1, 2, 3, 4].map((stepNumber) => (
+          <div
+            key={stepNumber}
+            className={`flex-1 text-center ${
+              step >= stepNumber ? 'text-blue-600' : 'text-gray-400'
+            }`}
+          >
+            <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center ${
+              step >= stepNumber ? 'bg-blue-600 text-white' : 'bg-gray-200'
+            }`}>
+              {stepNumber}
+            </div>
+            <div className="mt-2 text-sm">
+              {stepNumber === 1 && 'URL 입력'}
+              {stepNumber === 2 && '키워드 수정'}
+              {stepNumber === 3 && '기사 생성'}
+              {stepNumber === 4 && '최종 확인'}
+            </div>
+          </div>
+        ))}
+      </div>
 
-        <button
-          type="button"
-          onClick={handleInsertBacklinks}
-          disabled={!isGenerated || hasBacklinks}
-          className="bg-purple-500 text-white py-2 rounded hover:bg-purple-600 disabled:bg-purple-300 disabled:cursor-not-allowed"
-        >
-          {hasBacklinks ? '백링크가 이미 삽입됨' : '키워드 백링크 삽입하기'}
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed"
-        >
-          {isSubmitting ? '작성 중...' : '작성하기'}
-        </button>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {/* Step 1: URL 입력 */}
+        {step === 1 && (
+          <div className="space-y-4">
+            <input
+              className="border p-2 rounded w-full"
+              placeholder="타겟 사이트 URL을 입력하세요"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={() => handleAnalyzeSite()}
+              disabled={isLoading}
+              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
+            >
+              {isLoading ? '분석 중...' : '사이트 분석하기'}
+            </button>
+          </div>
+        )}
+
+        {/* Step 2: 키워드 수정 */}
+        {step === 2 && (
+          <div className="space-y-6">
+            {/* 사이트 분석 결과 */}
+            <div className="bg-gray-50 p-4 rounded">
+              <h3 className="font-bold mb-4 text-lg">사이트 분석 결과</h3>
+              {siteAnalysis && (
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold mb-2">주요 서비스/제품</h4>
+                    <p className="text-gray-700">{siteAnalysis.services}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">타겟 고객층</h4>
+                    <p className="text-gray-700">{siteAnalysis.targetAudience}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">주요 특징과 장점</h4>
+                    <p className="text-gray-700">{siteAnalysis.features}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">시장 포지셔닝</h4>
+                    <p className="text-gray-700">{siteAnalysis.positioning}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 부가 설명 입력 */}
+            <div className="bg-white p-4 rounded border">
+              <h3 className="font-bold mb-4 text-lg">부가 설명</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    추가 정보 입력
+                  </label>
+                  <textarea
+                    className="border p-2 rounded w-full min-h-[100px]"
+                    placeholder="사이트에 대한 추가 정보나 특별히 고려해야 할 점을 입력하세요"
+                    value={additionalInfo}
+                    onChange={(e) => setAdditionalInfo(e.target.value)}
+                  />
+                  <p className="mt-2 text-sm text-gray-500">
+                    사이트에 대한 추가 정보나 특별히 고려해야 할 점을 입력하면 더 정확한 분석이 가능합니다.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleReanalyze}
+                  disabled={isLoading}
+                  className="w-full bg-blue-100 text-blue-600 py-2 rounded hover:bg-blue-200 disabled:bg-blue-50 disabled:text-blue-300"
+                >
+                  {isLoading ? '분석 중...' : '부가 설명을 반영하여 다시 분석하기'}
+                </button>
+              </div>
+            </div>
+
+            {/* 키워드 수정 폼 */}
+            <div className="bg-white p-4 rounded border">
+              <h3 className="font-bold mb-4 text-lg">키워드 수정</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    추천 키워드
+                  </label>
+                  <textarea
+                    className="border p-2 rounded w-full min-h-[100px]"
+                    placeholder="키워드를 수정하세요 (쉼표로 구분)"
+                    value={keywords}
+                    onChange={(e) => setKeywords(e.target.value)}
+                  />
+                  <p className="mt-2 text-sm text-gray-500">
+                    추천된 키워드를 수정하거나 새로운 키워드를 추가할 수 있습니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="flex-1 bg-gray-500 text-white py-2 rounded hover:bg-gray-600"
+              >
+                이전
+              </button>
+              <button
+                type="button"
+                onClick={handleGenerateArticle}
+                disabled={isLoading}
+                className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
+              >
+                {isLoading ? '기사 생성 중...' : '기사 생성하기'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: 기사 생성 */}
+        {step === 3 && (
+          <div className="space-y-4">
+            <input
+              className="border p-2 rounded w-full"
+              placeholder="제목"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+            <input
+              className="border p-2 rounded w-full"
+              placeholder="미리보기 문구"
+              value={preview}
+              onChange={(e) => setPreview(e.target.value)}
+            />
+            <textarea
+              className="border p-2 rounded w-full min-h-[200px]"
+              placeholder="본문 내용"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                className="flex-1 bg-gray-500 text-white py-2 rounded hover:bg-gray-600"
+              >
+                이전
+              </button>
+              <button
+                type="button"
+                onClick={handleInsertBacklinks}
+                className="flex-1 bg-purple-500 text-white py-2 rounded hover:bg-purple-600"
+              >
+                백링크 삽입하기
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: 최종 확인 */}
+        {step === 4 && (
+          <div className="space-y-6">
+            <div className="bg-gray-50 p-4 rounded">
+              <h3 className="font-bold mb-4 text-lg">최종 확인</h3>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-2">기본 정보</h4>
+                  <div className="bg-white p-3 rounded border">
+                    <p className="mb-2"><strong>제목:</strong> {title}</p>
+                    <p className="mb-2"><strong>미리보기:</strong> {preview}</p>
+                    <p className="mb-2"><strong>키워드:</strong> {keywords}</p>
+                    <p className="mb-2"><strong>타겟 URL:</strong> {link}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">기사 내용</h4>
+                  <div className="bg-white p-3 rounded border">
+                    <div 
+                      className="prose max-w-none"
+                      dangerouslySetInnerHTML={{ __html: content }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setStep(3)}
+                className="flex-1 bg-gray-500 text-white py-2 rounded hover:bg-gray-600"
+              >
+                이전
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:bg-green-300"
+              >
+                {isSubmitting ? '작성 중...' : '작성 완료하기'}
+              </button>
+            </div>
+          </div>
+        )}
       </form>
     </div>
   );
