@@ -12,6 +12,7 @@ export default function NewsWritePage() {
   const [keywordRelation, setKeywordRelation] = useState('');
   const [isGenerated, setIsGenerated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   const handleAIGenerate = async () => {
@@ -33,11 +34,16 @@ export default function NewsWritePage() {
       });
 
       const data = await res.json();
+      console.log('API Response:', data);
 
       if (res.ok) {
         setTitle(data.title);
         setPreview(data.preview);
         setContent(data.content);
+        if (data.keywords) {
+          console.log('Setting keywords:', data.keywords);
+          setKeywords(data.keywords);
+        }
         setIsGenerated(true);
       } else {
         alert('AI 기사 생성 실패: ' + data.error);
@@ -51,31 +57,38 @@ export default function NewsWritePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    const res = await fetch('/api/news', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify({ title, preview, content }),
-    });
-
-    if (res.ok) {
-      await fetch('/api/revalidate', {
+    try {
+      const res = await fetch('/api/news', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify({
-          path: '/',
-          secret: process.env.NEXT_PUBLIC_REVALIDATE_TOKEN,
-        }),
+        body: JSON.stringify({ title, preview, content }),
       });
-      alert('작성 완료!');
-      router.push('/');
-    } else {
-      alert('작성 실패!');
+
+      if (res.ok) {
+        await fetch('/api/revalidate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            path: '/',
+            secret: process.env.NEXT_PUBLIC_REVALIDATE_TOKEN,
+          }),
+        });
+        alert('작성 완료!');
+        router.push('/');
+      } else {
+        alert('작성 실패!');
+        setIsSubmitting(false);
+      }
+    } catch (error) {
+      alert('작성 중 오류가 발생했습니다.');
+      setIsSubmitting(false);
     }
   };
 
@@ -124,7 +137,7 @@ export default function NewsWritePage() {
         />
         <textarea
           className="border p-2 rounded min-h-[100px]"
-          placeholder="키워드 간의 관계나 기사의 맥락을 설명하면 더 나은 기사가 생성됨. (선택사항)"
+          placeholder="키워드 간의 관계나 기사의 맥락을 설명하면 더 나은 기사가 생성됨. 작성된 기사가 이상하면, 여기에 설명을 추가하세요.(선택사항)"
           value={keywordRelation}
           onChange={(e) => setKeywordRelation(e.target.value)}
         />
@@ -150,9 +163,10 @@ export default function NewsWritePage() {
         </button>
         <button
           type="submit"
-          className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          disabled={isSubmitting}
+          className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed"
         >
-          작성하기
+          {isSubmitting ? '작성 중...' : '작성하기'}
         </button>
       </form>
     </div>
