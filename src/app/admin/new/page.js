@@ -13,7 +13,31 @@ export default function NewsWritePage() {
   const [isGenerated, setIsGenerated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasBacklinks, setHasBacklinks] = useState(false);
   const router = useRouter();
+
+  const handleInsertBacklinks = () => {
+    if (!link.trim()) {
+      alert('웹사이트 주소는 필수값 입니다!');
+      return;
+    }
+
+    const keywordList = keywords.split(',').map(k => k.trim());
+    let newContent = content;
+
+    keywordList.forEach((keyword) => {
+      if (keyword) {
+        const regex = new RegExp(`(${keyword})`, 'g');
+        newContent = newContent.replace(
+          regex,
+          `<a href="${link}" target="_blank">$1</a>`
+        );
+      }
+    });
+
+    setContent(newContent);
+    setHasBacklinks(true);
+  };
 
   const handleAIGenerate = async () => {
     if (!link.trim()) {
@@ -45,6 +69,7 @@ export default function NewsWritePage() {
           setKeywords(data.keywords);
         }
         setIsGenerated(true);
+        setHasBacklinks(false);
       } else {
         alert('AI 기사 생성 실패: ' + data.error);
       }
@@ -141,6 +166,7 @@ export default function NewsWritePage() {
           value={keywordRelation}
           onChange={(e) => setKeywordRelation(e.target.value)}
         />
+        
         <button
           type="button"
           onClick={handleAIGenerate}
@@ -160,6 +186,15 @@ export default function NewsWritePage() {
           ) : (
             'AI로 기사 생성하기'
           )}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleInsertBacklinks}
+          disabled={!isGenerated || hasBacklinks}
+          className="bg-purple-500 text-white py-2 rounded hover:bg-purple-600 disabled:bg-purple-300 disabled:cursor-not-allowed"
+        >
+          {hasBacklinks ? '백링크가 이미 삽입됨' : '키워드 백링크 삽입하기'}
         </button>
         <button
           type="submit"

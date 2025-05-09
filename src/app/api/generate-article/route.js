@@ -63,17 +63,6 @@ export async function POST(req) {
 
     let content = contentMatch?.[1]?.trim() ?? '';
 
-    // 🔗 키워드 자동 링크 삽입
-    keywordList.forEach((keyword) => {
-      if (keyword) {
-        const regex = new RegExp(`(${keyword})`, 'g');
-        content = content.replace(
-          regex,
-          `<a href="${link}" target="_blank">$1</a>`
-        );
-      }
-    });
-
     return Response.json({
       title: titleMatch?.[1]?.trim() ?? '제목 없음',
       preview: previewMatch?.[1]?.trim() ?? '',
