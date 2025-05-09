@@ -8,9 +8,9 @@ export async function POST(req) {
   try {
     const { keywords, link, keywordRelation } = await req.json();
 
-    if (!keywords || !link) {
+    if (!link) {
       return Response.json(
-        { error: '키워드와 링크가 모두 필요합니다.' },
+        { error: '링크가 반드시 필요합니다.' },
         { status: 400 }
       );
     }
@@ -18,18 +18,27 @@ export async function POST(req) {
     const keywordList = keywords.split(',').map(k => k.trim());
 
     const prompt = `
-당신은 뉴스 기사 작성자입니다. 아래 키워드와 관계 설명을 참고하여 다음 형식에 맞는 기사 1건을 작성해 주세요. 본문은 2000자 내외로 최대한 길게 작성해주세요.  
+    당신은 뉴스 기사 작성자입니다. 
+아래 웹사이트가 소개하는 회사나 서비스에 대해서 조사하고, 
+마케팅적 관점에서 이 회사를 가장 잘 소개할 수 있는 키워드 10개를 SEO적 관점에서 선택하세요. 
+백링크로 유입이 가장 많이 발생할 수 있는 가능성을 검토하는게 최우선. 
+
+해당 키워드와 해당 웹사이트의 정보를 참고하여 다음 형식에 맞는 기사 1건을 2000자 내외로 작성해 주세요. 
 키워드를 반드시 다 사용할 필요는 없음. 적절하게 사용하면 됩니다.
 키워드 간의 관계에 더 집중해서 기사를 작성 해 주세요. 
 
-키워드: ${keywords}
-${keywordRelation ? `키워드 간의 관계 설명: ${keywordRelation}` : ''}
+그리고 아래 필수 키워드는 반드시 포함되어야 합니다.
+
+웹사이트 : ${link}
+${keywords ? `필수 키워드: ${keywords}` : ''}
+${keywordRelation ? `추가 설명: ${keywordRelation}` : ''}
 
 응답 형식:
 ---
 제목: ...
 미리보기: ...
 본문: ...
+
 `;
 
     const chatRes = await openai.chat.completions.create({

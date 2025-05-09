@@ -40,13 +40,14 @@ export default async function NewsDetailPage({ params }) {
         {new Date(news.createdAt).toISOString().split("T")[0]}
       </p>
       <div
-        className="text-lg leading-7 whitespace-pre-line"
+        className="text-lg leading-7 whitespace-pre-line [&_a]:underline [&_a]:text-[#333] [&_a]:hover:text-[#111]"
         dangerouslySetInnerHTML={{ __html: news.content }}
       />
 
-
       {/* 클라이언트 컴포넌트에서 삭제/수정 처리 */}
-      <DeleteEditButtons newsId={news.id} />
+      <div className="mt-8">
+        <DeleteEditButtons newsId={news.id} />
+      </div>
     </div>
   );
 }

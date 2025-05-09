@@ -15,8 +15,8 @@ export default function NewsWritePage() {
   const router = useRouter();
 
   const handleAIGenerate = async () => {
-    if (!keywords.trim() || !link.trim()) {
-      alert('키워드와 링크를 모두 입력해 주세요!');
+    if (!link.trim()) {
+      alert('웹사이트 주소는 필수값 입니다!');
       return;
     }
 
@@ -84,6 +84,18 @@ export default function NewsWritePage() {
       <h2 className="text-2xl font-bold mb-6">뉴스 작성</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
+          className="border p-2 rounded"
+          placeholder="타겟 사이트 (모든 키워드에 동일하게 적용)"
+          value={link}
+          onChange={(e) => setLink(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleAIGenerate();
+            }
+          }}
+        />
+        <input
           className="border p-2 rounded disabled:bg-gray-100 disabled:cursor-not-allowed"
           placeholder="제목"
           value={title}
@@ -106,19 +118,13 @@ export default function NewsWritePage() {
         />
         <input
           className="border p-2 rounded"
-          placeholder="키워드 (콤마로 구분)"
+          placeholder="키워드 (콤마로 구분) (선택사항)"
           value={keywords}
           onChange={(e) => setKeywords(e.target.value)}
         />
-        <input
-          className="border p-2 rounded"
-          placeholder="링크 (모든 키워드에 동일하게 적용)"
-          value={link}
-          onChange={(e) => setLink(e.target.value)}
-        />
         <textarea
           className="border p-2 rounded min-h-[100px]"
-          placeholder="키워드 간의 관계나 맥락을 설명해주세요 (선택사항)"
+          placeholder="키워드 간의 관계나 기사의 맥락을 설명하면 더 나은 기사가 생성됨. (선택사항)"
           value={keywordRelation}
           onChange={(e) => setKeywordRelation(e.target.value)}
         />
@@ -136,6 +142,8 @@ export default function NewsWritePage() {
               </svg>
               기사 생성 중...
             </>
+          ) : isGenerated ? (
+            '기사 다시 생성하기'
           ) : (
             'AI로 기사 생성하기'
           )}
